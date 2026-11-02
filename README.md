@@ -41,7 +41,7 @@ Each `v*` tag publishes an ad-hoc signed `YabaiTab.zip` on the
 ```sh
 curl -LO https://github.com/Anemone95/YabaiTab/releases/latest/download/YabaiTab.zip
 ditto -x -k YabaiTab.zip /Applications
-xattr -dr com.apple.quarantine /Applications/YabaiTab.app
+/usr/bin/xattr -dr com.apple.quarantine /Applications/YabaiTab.app
 open /Applications/YabaiTab.app
 ```
 
