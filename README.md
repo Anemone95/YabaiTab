@@ -1,5 +1,7 @@
 # YabaiTab
 
+[![Build](https://github.com/Anemone95/YabaiTab/actions/workflows/build.yml/badge.svg)](https://github.com/Anemone95/YabaiTab/actions/workflows/build.yml)
+
 A ⌃Tab window switcher for macOS, built on [yabai](https://github.com/asmvik/yabai).
 Hold ⌃ and press Tab to step through the windows of every Space and display, shown as
 thumbnails in most-recently-used order. Release ⌃ to focus the selected window.
@@ -30,15 +32,30 @@ thumbnails in most-recently-used order. Release ⌃ to focus the selected window
 
 - macOS 26 on Apple silicon
 - yabai running, installed at `/opt/homebrew/bin/yabai`
-- Xcode Command Line Tools (`swiftc`, `codesign`)
-- A code-signing certificate in your login keychain. `build.sh` signs with `yabai-cert`,
-  the certificate that yabai's install guide creates. Set `SIGN_IDENTITY` to use another
-  one. A stable identity keeps the macOS permission grants valid across rebuilds.
 
-## Install
+## Install a release
+
+Each `v*` tag publishes an ad-hoc signed `YabaiTab.zip` on the
+[Releases](https://github.com/Anemone95/YabaiTab/releases) page.
 
 ```sh
-git clone git@github.com:Anemone95/YabaiTab.git
+curl -LO https://github.com/Anemone95/YabaiTab/releases/latest/download/YabaiTab.zip
+ditto -x -k YabaiTab.zip /Applications
+xattr -dr com.apple.quarantine /Applications/YabaiTab.app
+open /Applications/YabaiTab.app
+```
+
+To start it at login, add YabaiTab in System Settings › General › Login Items.
+
+## Build from source
+
+This needs Xcode Command Line Tools (`swiftc`, `codesign`) and a code-signing certificate in
+your login keychain. `build.sh` signs with `yabai-cert`, the certificate that yabai's install
+guide creates. Set `SIGN_IDENTITY` to use another one. A stable identity keeps the macOS
+permission grants valid across rebuilds and updates.
+
+```sh
+git clone https://github.com/Anemone95/YabaiTab.git
 cd YabaiTab
 ./install.sh
 ```
@@ -46,14 +63,14 @@ cd YabaiTab
 `install.sh` builds the app, copies it to `/Applications/YabaiTab.app`, and loads the
 LaunchAgent `~/Library/LaunchAgents/org.wenyuan.yabaitab.plist`. The agent starts YabaiTab
 at login and restarts it after a crash. "Quit YabaiTab" in the menu bar icon stops it until
-the next login.
+the next login. Run `./install.sh` again after a change to update the installed app.
+
+## Permissions
 
 On first start, give YabaiTab these permissions in System Settings › Privacy & Security:
 
 - **Accessibility**, for the ⌃Tab keyboard shortcut
 - **Screen & System Audio Recording**, for the thumbnails
-
-Run `./install.sh` again after a change to update the installed app.
 
 ## How it works
 
@@ -71,6 +88,20 @@ To check the thumbnails, write one PNG per window and a `report.txt` to a folder
 ```sh
 mkdir -p /tmp/yabaitab-capture
 open -n /Applications/YabaiTab.app --args --capture-test /tmp/yabaitab-capture
+```
+
+## CI
+
+`.github/workflows/build.yml` runs on the `macos-26` runner for every push to `main`, every
+pull request and every `v*` tag. It builds with an ad-hoc signature and uploads `YabaiTab.zip`
+as a workflow artifact. For a tag it sets the app version from the tag name (`v0.2.0` →
+`0.2.0`) and publishes the zip as a GitHub release.
+
+To publish a release:
+
+```sh
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 ## Uninstall

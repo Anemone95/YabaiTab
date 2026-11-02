@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: plutil -replace CFBundleShortVersionString -string "${GITHUB_REF_NAME#v}" Info.plist
+
+      - name: Build (ad-hoc signed)
+        run: SIGN_IDENTITY=- ./build.sh
+
+      - name: Package
+        run: ditto -c -k --keepParent build/YabaiTab.app YabaiTab.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YabaiTab
+          path: YabaiTab.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" YabaiTab.zip --title "YabaiTab $GITHUB_REF_NAME" --generate-notes
